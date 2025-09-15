@@ -22,39 +22,12 @@ El flujo que se sigue para la implementación de este asistente es:
 
 ## Configuración del entorno
 
-### Opción 1: Con Poetry
-
-1. **Instalar Poetry** (si no lo tienes):
-   ```bash
-   curl -sSL https://install.python-poetry.org | python3 -
-   ```
-
-2. **Clonar el repositorio**:
-   ```bash
-   git clone <url-del-repo>
-   cd achilles
-   ```
-
-3. **Instalar dependencias**:
-   ```bash
-   # Solo dependencias de producción
-   poetry install --only main
-   
-   # O con dependencias de desarrollo (incluye notebooks)
-   poetry install
-   ```
-
-4. **Activar el entorno virtual**:
-   ```bash
-   poetry shell
-   ```
-
-### Opción 2: Con pip y entorno virtual
+### Opción 1: Con pip y entorno virtual
 
 1. **Clonar el repositorio**:
    ```bash
-   git clone <url-del-repo>
-   cd achilles
+   git clone https://github.com/jorgealvrzrdrgz/rag-pipeline-achilles
+   cd rag-pipeline-achilles
    ```
 
 2. **Crear y activar entorno virtual**:
@@ -78,6 +51,32 @@ El flujo que se sigue para la implementación de este asistente es:
    ```bash
    python -c "import torch; print('✅ PyTorch instalado correctamente')"
    ```
+### Opción 2: Con Poetry
+
+1. **Instalar Poetry** (si no lo tienes):
+   ```bash
+   curl -sSL https://install.python-poetry.org | python3 -
+   ```
+
+2. **Clonar el repositorio**:
+   ```bash
+   git clone https://github.com/jorgealvrzrdrgz/rag-pipeline-achilles
+   cd rag-pipeline-achilles
+   ```
+
+3. **Instalar dependencias**:
+   ```bash
+   # Solo dependencias de producción
+   poetry install --only main
+   
+   # O con dependencias de desarrollo (incluye notebooks)
+   poetry install
+   ```
+
+4. **Activar el entorno virtual**:
+   ```bash
+   poetry shell
+   ```
 
 ### Requisitos del sistema
 - Python 3.13
@@ -97,15 +96,10 @@ Una vez levantado Qdrant, se procede a ingestar los datos:
 python -m ingest
 ```
 
-Para ejecutar la inferencia, es necesario crear un archivo `.env` e introducir el API KEY de OpenAI:
+Para ejecutar la inferencia, es necesario copiar el archivo el archivo `.env.sample` e introducir el API KEY de OpenAI:
 
 ```bash
-# Crear archivo .env
-touch .env
-
-# Agregar las siguientes líneas al archivo .env:
-echo "OPENAI_API_KEY=tu_api_key_aqui" >> .env
-echo "RERANK=True" >> .env  # Opcional: False para deshabilitarlo
+cp .env.sample .env
 ```
 
 O crear manualmente el archivo `.env` con el siguiente contenido:
@@ -193,5 +187,21 @@ La decisión de incluir una herramienta `search` en vez de inyectar directamente
 1. La query de búsqueda generada por la herramienta puede ser una reformulación de la query original, por lo que podemos eliminar ruido con esta reformulación.
 2. Mejor manejo de interacciones habituales con asistentes. Para interacciones habituales como "Hola" o "Quien eres?" no es necesario recuperar información de los documentos (en este caso), por lo que nos ahorramos la búsqueda vectorial. 
 
+Para saber en qué chunks se ha basado el LLM para dar la respuesta, se le pide que acompañe su respuesta con un [<nombre_del_documento>::<indice_del_chunk>]
+
 ## Métricas
 
+A continuación se muestran las métricas obtenidas con y sin reranker.
+
+| Métrica             | Con Reranker | Sin Reranker |
+|---------------------|--------------|--------------|
+| Retrieval Hit Rate  | 1.0          | 0.9          |
+| Response Hit Rate   | 1.0          | 0.9          |
+| Retrieval Recall    | 0.95         | 0.9          |
+| MRR                 | 0.75         | 0.7667       |
+
+Retrieval Hit Rate se refiere al hit rate conseguido durante la fase de retrieval, mientras que Response Hit Rate se refiere al Hit Rate obtenido considerando únicamente las referencias que se muestran en las respuestas.
+
+Como podemos ver, con el reranker se obtiene mejores métricas que con sin él. Aunque el MRR es ligeramente mayor sin reranker, lo cual nos hace ver que rankea los chunks relevantes más arriba, en el resto de métricas es mejor, y dado que no estamos tan interesados en rankear arriba como en rankear los chunks relevantes @k, podemos concluir que el reranker mejora el pipeline del RAG.
+
+**NOTA**: para hacer este estudio de forma más rigurosa, además de utilizar un dataset mucho mayor, se debería haber comparado los resultados usando las mismas queries. Dada la naturleza no determinista de los LLMs, cada inferencia puede dar una query de búsqueda diferente. De todas formas, en ambos casos se ha probado que el pipeline RAG aquí implementado funciona correctamente.
