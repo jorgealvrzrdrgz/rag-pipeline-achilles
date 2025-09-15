@@ -75,7 +75,7 @@ El flujo que se sigue para la implementación de este asistente es:
 
 4. **Activar el entorno virtual**:
    ```bash
-   poetry shell
+   poetry env activate
    ```
 
 ### Requisitos del sistema
@@ -91,12 +91,7 @@ Para levantar la base de datos vectorial Qdrant:
 docker compose -f etc/docker-compose.yml up -d 
 ```
 
-Una vez levantado Qdrant, se procede a ingestar los datos:
-```
-python -m ingest
-```
-
-Para ejecutar la inferencia, es necesario copiar el archivo el archivo `.env.sample` e introducir el API KEY de OpenAI:
+Para ejecutar tanto la ingesta como la inferencia, es necesario copiar el archivo el archivo `.env.sample` e introducir el API KEY de OpenAI:
 
 ```bash
 cp .env.sample .env
@@ -106,6 +101,10 @@ O crear manualmente el archivo `.env` con el siguiente contenido:
 ```
 OPENAI_API_KEY=tu_api_key_aqui
 RERANK=True
+```
+Una vez levantado Qdrant y con las variables de entorno configuradas, se procede a ingestar los datos:
+```
+python -m ingest
 ```
 
 Con los datos ingestados y el API KEY de OpenAI introducido, se puede proceder a lanzar la inferencia sobre el archivo de datos `eval.jsonl`:
@@ -200,6 +199,8 @@ A continuación se muestran las métricas obtenidas con y sin reranker.
 | Retrieval Recall    | 0.95         | 0.9          |
 | MRR                 | 0.75         | 0.7667       |
 
+(El calculo de estas métricas puede verse en `notebooks/Metrics.ipynb`)
+
 Retrieval Hit Rate se refiere al hit rate conseguido durante la fase de retrieval, mientras que Response Hit Rate se refiere al Hit Rate obtenido considerando únicamente las referencias que se muestran en las respuestas.
 
 Como podemos ver, con el reranker se obtiene mejores métricas que con sin él. Aunque el MRR es ligeramente mayor sin reranker, lo cual nos hace ver que rankea los chunks relevantes más arriba, en el resto de métricas es mejor, y dado que no estamos tan interesados en rankear arriba como en rankear los chunks relevantes @k, podemos concluir que el reranker mejora el pipeline del RAG.
@@ -207,3 +208,6 @@ Como podemos ver, con el reranker se obtiene mejores métricas que con sin él. 
 **NOTA**: para hacer este estudio de forma más rigurosa, además de utilizar un dataset mucho mayor, se debería haber comparado los resultados usando las mismas queries. Dada la naturleza no determinista de los LLMs, cada inferencia puede dar una query de búsqueda diferente. De todas formas, en ambos casos se ha probado que el pipeline RAG aquí implementado funciona correctamente.
 
 Analizando una a una las respuestas de cada query, vemos que el 100% son respondidas correctamente. Aunque en ocasiones mencionan contenido de chunks diferentes a los etiquetados como relevantes, esta información es siempre complementaria a la de las fuentes principales.
+
+## Tiempos de ingesta en inferencia
+En mi ordenador, el tiempo de ingesta suele estar entre los 10 minutos, mientras que el de la inferencia con reranker puede llegar a los 15-20 minutos, mientras que sin reranker suele tardar unos 60 segundos aproximadamente. Como posibles mejoras, podría estar la paralelización de la ingesta, en la que el cuello de botella es la generación de embeddings, mediante el procesamiento en batch de los chunks a través del modelo de embeddings, y la optimización del reranker, usando por ejemplo un modelo quantizado.
