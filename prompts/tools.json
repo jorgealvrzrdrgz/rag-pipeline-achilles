@@ -1,0 +1,16 @@
+[{
+    "type": "function",
+    "name": "search",
+    "description": "Busca información relevante en la fuente configurada.",
+    "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+            "query": {
+                "type": "string",
+                "description": "Texto de búsqueda."
+            }
+        },
+        "required": ["query"]
+    }
+}]
