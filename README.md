@@ -205,3 +205,5 @@ Retrieval Hit Rate se refiere al hit rate conseguido durante la fase de retrieva
 Como podemos ver, con el reranker se obtiene mejores métricas que con sin él. Aunque el MRR es ligeramente mayor sin reranker, lo cual nos hace ver que rankea los chunks relevantes más arriba, en el resto de métricas es mejor, y dado que no estamos tan interesados en rankear arriba como en rankear los chunks relevantes @k, podemos concluir que el reranker mejora el pipeline del RAG.
 
 **NOTA**: para hacer este estudio de forma más rigurosa, además de utilizar un dataset mucho mayor, se debería haber comparado los resultados usando las mismas queries. Dada la naturleza no determinista de los LLMs, cada inferencia puede dar una query de búsqueda diferente. De todas formas, en ambos casos se ha probado que el pipeline RAG aquí implementado funciona correctamente.
+
+Analizando una a una las respuestas de cada query, vemos que el 100% son respondidas correctamente. Aunque en ocasiones mencionan contenido de chunks diferentes a los etiquetados como relevantes, esta información es siempre complementaria a la de las fuentes principales.
